@@ -203,6 +203,13 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 	end
 end)
 
+local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+
+-- Update character on respawn
+LocalPlayer.CharacterAdded:Connect(function(newCharacter)
+	character = newCharacter
+end)
+
 for rockName, rockObject in pairs(Rocks) do
 	local toggled = false
 
@@ -251,7 +258,6 @@ for rockName, rockObject in pairs(Rocks) do
 			-- Start touching loop
 			task.spawn(function()
 				while toggled do
-					local character = LocalPlayer.Character
 					if character and character:FindFirstChild("LeftHand") and character:FindFirstChild("RightHand") then
 						if rockObject:IsA("BasePart") then
 							-- Simulate touch with both hands
@@ -260,10 +266,8 @@ for rockName, rockObject in pairs(Rocks) do
 							firetouchinterest(rockObject, character.LeftHand, 0)
 							firetouchinterest(rockObject, character.LeftHand, 1)
 						end
-					else
-						break
 					end
-					task.wait(0)
+					task.wait()
 				end
 			end)
 		else
