@@ -1,0 +1,1044 @@
+local DrRayLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/AZYsGithub/DrRay-UI-Library/main/DrRay.lua"))()
+local window = DrRayLibrary:Load("Disguise", "Default")
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local backpack = LocalPlayer.Backpack
+local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+local ads = game.Players.LocalPlayer.adsAllowed
+ads = false
+
+local savedPos = nil
+local locked = false
+
+local Rocks = {
+	["Jungle Rock"] = workspace.machinesFolder["Ancient Jungle Rock"].Rock,
+	["King Rock"] = workspace.machinesFolder["Muscle King Mountain"].Rock,
+	["Legends Rock"] = workspace.machinesFolder["Rock Of Legends"].Rock,
+	["Inferno Rock"] = workspace.machinesFolder["Inferno Rock"].Rock
+}
+
+local rockNames = {"None", "Jungle Rock", "King Rock", "Legends Rock", "Inferno Rock"}
+
+local safezone = CFrame.new(-40.3073616, 57.2281189, 1994.49194, 0.999990523, 7.06776415e-09, -0.00435601966, -7.17407111e-09, 1, -2.43889637e-08, 0.00435601966, 2.44199825e-08, 0.999990523)
+
+
+local main = DrRayLibrary.newTab("Main", "ImageIdHere")
+local glitch = DrRayLibrary.newTab("Rocks", "ImageIdHere")
+local farm = DrRayLibrary.newTab("Reb", "ImageIdHere")
+local player = DrRayLibrary.newTab("Player", "ImageIdHere")
+local kill = DrRayLibrary.newTab("Kill", "ImageHere")
+
+local function getTool(toolName)
+	local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+	local tool = character:FindFirstChild(toolName) or backpack:FindFirstChild(toolName)
+	return tool
+end
+
+-- Function to set repTime to 0
+local function setFastRep(toolName)
+	local tool = getTool(toolName)
+	if tool then
+		local repTime = tool:FindFirstChild("repTime")
+		if repTime then
+			repTime.Value = 0
+		end
+	end
+end
+
+main.newButton("Fast Tools", "Set Tools Rep to 0", function()
+	setFastRep("Weight")
+	setFastRep("Handstands")
+	setFastRep("Pushups")
+	setFastRep("Situps")
+end)
+
+local toolNames = { "Weight", "Handstands", "Pushups", "Situps" }
+
+local function autoApply()
+	task.wait(1) -- wait a little after respawn
+	for _, toolName in ipairs(toolNames) do
+		setFastRep(toolName)
+	end
+end
+
+LocalPlayer.CharacterAdded:Connect(function()
+	autoApply()
+end)
+
+local toolrep = workspace.machinesFolder
+
+main.newButton("Fast Equipments", "Set Equipment RepSpeed to 0", function()
+	for i, v in pairs(toolrep:GetChildren()) do
+		if v:IsA("Model") then
+			for y, z in pairs(v:GetChildren()) do
+				if z:IsA("NumberValue") then
+					z.Value = 0
+				end
+			end
+		end 
+	end
+end)
+
+local args = {
+	[1] = "rep"
+}
+
+local muscleEvent = LocalPlayer:WaitForChild("muscleEvent")
+
+local isAutoRep = false
+
+function AutoRep()
+	while isAutoRep do
+		-- Fire muscleEvent
+		muscleEvent:FireServer(unpack(args))
+		wait(0)  -- Delay (adjust if needed for speed)
+	end
+end
+
+main.newToggle("Auto Rep", "Rep For You", false, function(rep)
+	isAutoRep = rep
+	if rep then
+		spawn(function()
+			AutoRep()
+		end)
+	else
+
+	end
+end)
+
+local hrp
+local function onCharacterAdded(character)
+	hrp = character:WaitForChild("HumanoidRootPart")
+end
+
+
+LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
+
+if LocalPlayer.Character then
+	onCharacterAdded(LocalPlayer.Character)
+end
+
+main.newButton("Teleport To Tiny ", "Teleport Your Character!", function()
+	if hrp then
+		hrp.CFrame = safezone
+	end
+end)
+
+main.newToggle("Lock Position", "Lock Your Client Position", false, function(lock)
+	locked = lock  -- Update locked state
+
+	-- Start locking loop (always running while locked)
+	if locked then
+		task.spawn(function()
+			while locked do
+				local character = LocalPlayer.Character
+				local hrp = character and character:FindFirstChild("HumanoidRootPart")
+
+				if hrp then
+					-- Save position once at start
+					if not savedPos then
+						savedPos = hrp.CFrame
+					end
+					-- Keep locking
+					hrp.CFrame = savedPos
+				end
+				task.wait(0) -- smooth and no lag
+			end
+		end)
+	else
+		savedPos = nil
+	end
+end)
+
+main.newToggle("Disable Stat Effect", "Disable The Pop up Stats", false, function(stat)
+	if stat then
+		LocalPlayer.PlayerGui.statEffectsGui.statEffectsScript.Enabled = false
+		for _,v in pairs(game:GetService("Players").LocalPlayer.PlayerGui.statEffectsGui:GetChildren()) do
+			if v:IsA("Frame") then
+				v:Destroy()
+			elseif v:IsA("ImageLabel") then
+				v:Destroy()
+			end
+		end
+	else
+		LocalPlayer.PlayerGui.statEffectsGui.statEffectsScript.Enabled = true
+	end
+end)
+
+local running = false
+local autoEggThread
+
+main.newToggle("Auto Eat Egg", "Eat Egg Every 30 mins", false, function(autoegg)
+	running = autoegg
+
+	if running then
+		autoEggThread = task.spawn(function()
+			while running do
+				local player = game.Players.LocalPlayer
+				local boost = player.boostTimersFolder:FindFirstChild("Protein Egg")
+
+				if not boost then
+					local egg = player.Backpack:FindFirstChild("Protein Egg") or player.Character:FindFirstChild("Protein Egg")
+					if egg then
+						egg.Parent = player.Character
+						task.wait()
+						egg:Activate()
+					end
+				end
+				task.wait()
+			end
+		end)
+	end
+end)
+
+LocalPlayer.CharacterAdded:Connect(function(char)
+	if locked then
+		-- Wait a short moment until HumanoidRootPart is ready
+		local hrp = char:WaitForChild("HumanoidRootPart", 5)
+		if hrp and savedPos then
+			task.wait(0.1)
+			hrp.CFrame = savedPos
+		end
+	end
+end)
+
+for rockName, rockObject in pairs(Rocks) do
+	local toggled = false
+
+	-- Save original properties
+	local originalCFrame = rockObject.CFrame
+
+	-- Save label visibility
+	local originalLabels = {}
+	local Gui = rockObject:FindFirstChild("rockGui")
+	if Gui then
+		for _, v in pairs(Gui:GetChildren()) do
+			if v:IsA("TextLabel") then
+				originalLabels[v] = v.Visible
+			end
+		end
+	end
+
+	glitch.newToggle("Toggle " .. rockName, "Toggle to Punch Rock", false, function(togglerock)
+		toggled = togglerock
+		if toggled then
+			-- Remove particles and hide GUI labels
+			local particle1 = rockObject:FindFirstChild("hoopParticle")
+			local particle2 = rockObject:FindFirstChild("rockEmitter")
+			local particle3 = rockObject:FindFirstChild("lavaParticle")
+			local Gui = rockObject:FindFirstChild("rockGui")
+
+			if particle1 then particle1:Destroy() end
+			if particle2 then particle2:Destroy() end
+			if particle3 then particle3:Destroy() end
+
+			if Gui then
+				for _, v in pairs(Gui:GetChildren()) do
+					if v:IsA("TextLabel") then
+						v.Visible = false
+					end
+				end
+			end
+
+			-- Set properties early to prevent push
+			if rockObject:IsA("BasePart") then
+				rockObject.Transparency = 1
+				rockObject.CanCollide = false
+				rockObject.Anchored = true -- Prevent movement or push
+			end
+
+			-- Start touching loop
+			task.spawn(function()
+				while toggled do
+					local character = LocalPlayer.Character
+					if character and character:FindFirstChild("LeftHand") and character:FindFirstChild("RightHand") then
+						if rockObject:IsA("BasePart") then
+							-- Simulate touch with both hands
+							firetouchinterest(rockObject, character.RightHand, 0)
+							firetouchinterest(rockObject, character.RightHand, 1)
+							firetouchinterest(rockObject, character.LeftHand, 0)
+							firetouchinterest(rockObject, character.LeftHand, 1)
+						end
+					else
+						break
+					end
+					task.wait(0)
+				end
+			end)
+		else
+			-- Reset properties
+			if rockObject:IsA("BasePart") then
+				rockObject.Transparency = 0 -- Force visible
+				rockObject.Anchored = true
+				rockObject.CFrame = originalCFrame -- Reset position
+				task.wait(0.05)
+				rockObject.CanCollide = true
+			end
+
+			-- Restore GUI labels
+			local Gui = rockObject:FindFirstChild("rockGui")
+			if Gui then
+				for _, v in pairs(Gui:GetChildren()) do
+					if v:IsA("TextLabel") and originalLabels[v] ~= nil then
+						v.Visible = originalLabels[v]
+					end
+				end
+			end
+		end
+	end)
+end
+
+
+
+local muscleEvent = LocalPlayer:WaitForChild("muscleEvent")
+
+local toggles = {
+	autoPunch = false,
+
+}
+
+glitch.newToggle("Auto Punch", "Click To Auto Punch", false, function(punch)
+	toggles.autoPunch = punch
+end)
+
+task.spawn(function()
+	while true do
+		task.wait(0)
+		if toggles.autoPunch then
+			local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+			local backpack = LocalPlayer:WaitForChild("Backpack")
+
+			-- Move other tools to backpack, keep only Punch
+			for _, v in pairs(character:GetChildren()) do
+				if v:IsA("Tool") and v.Name ~= "Punch" then
+					v.Parent = backpack
+				end
+			end
+
+			-- Wait until Punch tool exists
+			local tool
+			repeat
+				task.wait(0)
+				character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+				backpack = LocalPlayer:WaitForChild("Backpack")
+				tool = character:FindFirstChild("Punch") or backpack:FindFirstChild("Punch")
+			until tool
+
+			-- Equip Punch if not already equipped
+			if tool.Parent ~= character then
+				-- Move tool to character
+				tool.Parent = character
+				task.wait(0.1) -- small wait
+
+				-- Force equip using Humanoid (this simulates hotbar press)
+				local humanoid = character:FindFirstChildOfClass("Humanoid")
+				if humanoid then
+					humanoid:EquipTool(tool)
+				end
+			end
+
+			-- Only punch if character is alive and tool is properly equipped
+			local humanoid = character:FindFirstChildOfClass("Humanoid")
+			if humanoid and humanoid.Health > 0 and tool.Parent == character then
+				tool:Activate()
+			end
+		end
+	end
+end)
+
+local function applyFastPunch()
+	local tool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Punch") or backpack:FindFirstChild("Punch")
+	if tool then
+		local attackTime = tool:FindFirstChild("attackTime")
+		if attackTime then
+			attackTime.Value = 0.005
+		end
+	end
+end
+
+glitch.newButton("Fast Punch", "Set Punch Speed to 0.005", function()
+	applyFastPunch()
+end)
+
+local rebirthStat = LocalPlayer:WaitForChild("leaderstats"):WaitForChild("Rebirths")
+
+local rebirthGoal = 1 -- default goal
+local autoRebirth = false
+
+farm.newInput("Goal Rebirth", "Set Your Rebirth Goal", function(text)
+	local num = tonumber(text)
+	if num and num > 0 then
+		rebirthGoal = num
+	else
+		print("Invalid Input")
+	end
+end)
+
+farm.newToggle("Auto Rebirth", "Rebirth until your goal", false, function(Rebirth)
+	autoRebirth = Rebirth
+	if Rebirth then
+		task.spawn(function()
+			while autoRebirth do
+				-- Check current rebirths
+				local currentRebirths = rebirthStat.Value
+				if currentRebirths >= rebirthGoal then
+					autoRebirth = false
+					break
+				end
+				game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("rebirthRemote"):InvokeServer("rebirthRequest")
+				task.wait(0)
+			end
+		end)
+	end
+end)
+
+local petsFolder = LocalPlayer:WaitForChild("petsFolder"):WaitForChild("Unique")
+local equipEvent = game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("equipPetEvent")
+local rebirthRemote = game:GetService("ReplicatedStorage"):WaitForChild("rEvents"):WaitForChild("rebirthRemote")
+
+local petNameForStrength = "Swift Samurai"
+local petNameForRebirth = "Tribal Overload"
+
+local running = false
+
+local function ownsPet(petName)
+	for _, pet in ipairs(petsFolder:GetChildren()) do
+		if pet.Name == petName then
+			return true -- owns at least 1
+		end
+	end
+	return false -- owns 0
+end
+
+local function unequipAllPets()
+	for _, pet in ipairs(petsFolder:GetChildren()) do
+		local args = { "unequipPet", pet }
+		equipEvent:FireServer(unpack(args))
+	end
+end
+
+local function equipPets(petName)
+	local equippedCount = 0
+	for _, pet in ipairs(petsFolder:GetChildren()) do
+		if pet.Name == petName then
+			local args = { "equipPet", pet }
+			equipEvent:FireServer(unpack(args))
+			equippedCount += 1
+			if equippedCount >= 8 then break end -- max 8
+		end
+	end
+end
+
+local function canRebirth()
+	local label = LocalPlayer.PlayerGui.gameGui.rebirthMenu.neededLabel.amountLabel
+	local text = label.Text
+	text = text:gsub(",", "") -- remove commas
+	local needed = tonumber(text)
+
+	local currentStrength = LocalPlayer.leaderstats.Strength.Value
+
+	return currentStrength >= needed
+end
+
+local function autoFarm()
+	-- ✅ Check if player owns the pets (at least 1)
+	local hasStrengthPets = ownsPet(petNameForStrength)
+	local hasRebirthPets = ownsPet(petNameForRebirth)
+
+	if not hasStrengthPets or not hasRebirthPets then
+		return
+	end
+
+	-- ✅ If passed the check, start auto loop
+	while running do
+		if canRebirth() then
+			unequipAllPets()
+			task.wait(1)
+
+			equipPets(petNameForRebirth)
+			task.wait(1)
+
+			local args = { "rebirthRequest" }
+			rebirthRemote:InvokeServer(unpack(args))
+
+			task.wait(1)
+			unequipAllPets()
+			task.wait(1)
+
+			equipPets(petNameForStrength)
+		end
+
+		task.wait(5)
+	end
+end
+
+farm.newToggle("Advance Rebirth [Need Pack's]", "Auto Reb With Packs", false, function(AdReb)
+	running = AdReb
+	if running then
+		task.spawn(autoFarm)
+	end
+end)
+
+isRunning = false
+
+local function startStrengthAutomation()
+	-- Equip pet once
+	equipPets(petNameForStrength)
+
+	task.spawn(function()
+		while isRunning do
+			for i = 1, 30 do
+				LocalPlayer.muscleEvent:FireServer("rep")
+			end
+			task.wait(0.03) -- small wait to prevent lag but keep it fast
+		end
+	end)
+end
+
+farm.newToggle("Fast Strength [Need Pack's]", "Fast Strength I Guess", false, function(fastS)
+	isRunning = fastS
+	if fastS then
+		startStrengthAutomation()
+	end
+end)
+
+local VirtualUser = game:GetService("VirtualUser")
+
+player.newToggle("Anti Afk", "Prevent To Kick you If you Afk ", false, function(afk)
+	if afk then
+		StartAntiAFK()
+	else
+		StopAntiAFK()
+	end
+end)
+
+local connection
+
+function StartAntiAFK()
+	-- Connect to player's idle event
+	connection = LocalPlayer.Idled:Connect(function()
+		VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+		task.wait(1)
+		VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+		print("Anti-AFK activated: Simulated right click.")
+	end)
+end
+
+function StopAntiAFK()
+	-- Disconnect idle connection if it exists
+	if connection then
+		connection:Disconnect()
+		connection = nil
+	end
+end
+
+player.newToggle("Hide Chat And Leaderstat", "Hide the Chat And Stat Gui", false, function(hGui)
+	if hGui then
+		game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)  -- Hide player list
+		game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.Chat, false)  -- Hide chat
+	else
+		game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, true)  -- Show player list
+		game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.Chat, true)  -- Show chat
+	end
+end)
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local forcingSize = false
+local forcedSize = 2
+
+player.newToggle("Set Size", "Set Your Size", false, function(size)
+	forcingSize = size
+	if size then
+		-- Start the loop
+		spawn(function()
+			while forcingSize do
+				local args = {
+					[1] = "changeSize",
+					[2] = forcedSize
+				}
+				ReplicatedStorage:WaitForChild("rEvents"):WaitForChild("changeSpeedSizeRemote"):InvokeServer(unpack(args))
+				wait(0) -- Repeat every 0.5 sec (adjust as needed)
+			end
+		end)
+	end
+end)
+
+player.newInput("Size Number", "Number To Set Size", function(text)
+	local sizeNumber = tonumber(text)
+	if sizeNumber then
+		forcedSize = sizeNumber
+	else
+		warn("Invalid number entered!")
+	end
+end)
+
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local flying = false
+local speed = 25  -- Default speed
+local bodyGyro, bodyVelocity
+local hrp
+local flyConnection
+local animateScript
+
+local function stopAnimations()
+	-- Disable default animations while flying
+	if player.Character then
+		animateScript = player.Character:FindFirstChild("Animate")
+		if animateScript then
+			animateScript.Disabled = true
+		end
+	end
+end
+
+local function resumeAnimations()
+	-- Resume default animations after flying
+	if animateScript then
+		animateScript.Disabled = false
+	end
+end
+
+local function startFlying()
+	if not hrp then return end
+
+	-- BodyGyro to control rotation
+	bodyGyro = Instance.new("BodyGyro")
+	bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+	bodyGyro.P = 9e4
+	bodyGyro.CFrame = hrp.CFrame
+	bodyGyro.Parent = hrp
+
+	-- BodyVelocity to control movement
+	bodyVelocity = Instance.new("BodyVelocity")
+	bodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+	bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+	bodyVelocity.Parent = hrp
+
+	-- Movement loop
+	flyConnection = RunService.RenderStepped:Connect(function()
+		if flying and hrp then
+			local cam = workspace.CurrentCamera
+			bodyGyro.CFrame = cam.CFrame
+			local moveDir = Vector3.new()
+
+			if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+				moveDir = moveDir + cam.CFrame.LookVector
+			end
+			if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+				moveDir = moveDir - cam.CFrame.LookVector
+			end
+			if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+				moveDir = moveDir - cam.CFrame.RightVector
+			end
+			if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+				moveDir = moveDir + cam.CFrame.RightVector
+			end
+
+			if moveDir.Magnitude > 0 then
+				bodyVelocity.Velocity = moveDir.Unit * speed
+			else
+				bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+			end
+		end
+	end)
+end
+
+local function stopFlying()
+	if bodyGyro then bodyGyro:Destroy() end
+	if bodyVelocity then bodyVelocity:Destroy() end
+	if flyConnection then flyConnection:Disconnect() end
+end
+
+-- This runs every time you respawn!
+local function onCharacterAdded(char)
+	hrp = char:WaitForChild("HumanoidRootPart")
+	if flying then
+		stopFlying()
+		startFlying()
+	end
+end
+
+-- Listen to respawn
+LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
+
+-- Initialize at first spawn
+if LocalPlayer.Character then
+	onCharacterAdded(LocalPlayer.Character)
+end
+
+-- Toggle Fly
+player.newToggle("Fly Toggle", "Toggle Fly Mode", false, function(toggleState)
+	flying = toggleState
+	if flying then
+		stopAnimations()  -- Stop default animations
+		startFlying()     -- Start flying
+	else
+		resumeAnimations()  -- Resume default animations
+		stopFlying()        -- Stop flying
+	end
+end)
+
+-- Slider for Speed
+player.newSlider("Fly Speed", "Control your fly speed", 350, false, function(num)
+	speed = num  -- Update fly speed live
+end)
+
+local UserInputService = game:GetService("UserInputService")
+local StarterGui = game:GetService("StarterGui")
+
+local camera = workspace.CurrentCamera
+
+-- Detect device function
+local function detectDevice()
+	if UserInputService.TouchEnabled then
+		return "Mobile"
+	elseif UserInputService.KeyboardEnabled and UserInputService.MouseEnabled then
+		return "PC"
+	elseif UserInputService.GamepadEnabled then
+		return "Console"
+	else
+		return "Unknown"
+	end
+end
+
+-- Shift Lock function for mobile
+local shiftLockEnabled = false
+
+local function applyShiftLockState()
+	if shiftLockEnabled then
+		camera.CameraType = Enum.CameraType.Attach
+		StarterGui:SetCore("TopbarEnabled", false)
+	else
+		camera.CameraType = Enum.CameraType.Custom
+		StarterGui:SetCore("TopbarEnabled", true)
+	end
+end
+
+local function enableShiftLock()
+	shiftLockEnabled = true
+	applyShiftLockState()
+end
+
+local function disableShiftLock()
+	shiftLockEnabled = false
+	applyShiftLockState()
+end
+
+-- Re-apply shift lock after death
+LocalPlayer.CharacterAdded:Connect(function()
+	task.wait(1)  -- Small delay to make sure character loads
+	applyShiftLockState()
+end)
+
+-- UI Toggle
+if detectDevice() == "Mobile" then
+	player.newToggle("ShiftLock", "Toggle ShiftLock!", true, function(toggleState)
+		if toggleState then
+			enableShiftLock()
+		else
+			disableShiftLock()
+		end
+	end)
+end
+
+local function EnableHighlight()
+	local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+
+	-- Don't add again if already exists
+	if character:FindFirstChild("Highlighter") then
+		return
+	end
+
+	local HL = Instance.new("Highlight")
+	HL.Name = "Highlighter"
+	HL.Parent = character
+	HL.FillColor = Color3.new(0.764706, 0.101961, 0.101961)
+	HL.OutlineColor = Color3.new(1, 0, 0)
+	HL.FillTransparency = 0
+end
+
+local function DisableHighlight()
+	local character = LocalPlayer.Character
+	if character then
+		local HL = character:FindFirstChild("Highlighter")
+		if HL then
+			HL:Destroy()
+		end
+	end
+end
+
+local BroughtPlayers = {}
+local whitelist = {}
+local targetPlayerName = nil
+
+local function isWhitelisted(name)
+	for _, whitelistedName in pairs(whitelist) do
+		if whitelistedName == name then
+			return true
+		end
+	end
+	return false
+end
+
+local function findPlayerByName(input)
+	input = input:lower()
+	for _, player in pairs(Players:GetPlayers()) do
+		if player.Name:lower() == input or player.DisplayName:lower() == input then
+			return player
+		end
+	end
+	return nil
+end
+
+function BringPlayer(targetPlayer)
+	local myCharacter = LocalPlayer.Character
+	local myLeftHand = myCharacter and myCharacter:FindFirstChild("LeftHand")
+
+	local targetChar = targetPlayer.Character
+	local targetHRP = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
+
+	if myLeftHand and targetHRP then
+		-- Save original position if not already saved
+		if not BroughtPlayers[targetPlayer] then
+			BroughtPlayers[targetPlayer] = targetHRP.CFrame
+		end
+
+		-- Force disable collisions
+		for _, part in ipairs(targetChar:GetDescendants()) do
+			if part:IsA("BasePart") then
+				part.CanCollide = false
+				part.Anchored = false
+			end
+		end
+
+		-- Bring them to your LeftHand position (with slight forward offset)
+		targetHRP.CFrame = myLeftHand.CFrame * CFrame.new(0,0,-6)
+		targetHRP.Velocity = Vector3.new(0, 0, 0)
+	end
+end
+
+function ResetBroughtPlayers()
+	for player, originalCFrame in pairs(BroughtPlayers) do
+		local char = player.Character
+		local hrp = char and char:FindFirstChild("HumanoidRootPart")
+		if hrp then
+			-- Re-enable collisions
+			for _, part in ipairs(char:GetChildren()) do
+				if part:IsA("BasePart") then
+					part.CanCollide = true
+				end
+			end
+
+			-- Reset position
+			hrp.CFrame = originalCFrame
+			hrp.Velocity = Vector3.new(0, 0, 0)
+		end
+	end
+	BroughtPlayers = {} -- Clear saved data
+end
+
+function AutoEvilKarma()
+	while _G.AutoEvil do
+		for _, player in ipairs(Players:GetPlayers()) do
+			if player ~= LocalPlayer and not isWhitelisted(player.Name) then
+				local evil = player:FindFirstChild("evilKarma") and player.evilKarma.Value or 0
+				local good = player:FindFirstChild("goodKarma") and player.goodKarma.Value or 0
+
+				-- Bring if they are more good (so you get evil karma)
+				if good > evil then
+					toggles.autoPunch = true
+					EnableHighlight()
+					BringPlayer(player)
+				end
+			end
+		end
+		task.wait(0)
+	end
+
+	-- On toggle off, reset players
+	ResetBroughtPlayers()
+	DisableHighlight()
+	toggles.autoPunch = false
+end
+
+function AutoGoodKarma()
+	while _G.AutoGood do
+		for _, player in ipairs(Players:GetPlayers()) do
+			if player ~= LocalPlayer and not isWhitelisted(player.Name) then
+				local evil = player:FindFirstChild("evilKarma") and player.evilKarma.Value or 0
+				local good = player:FindFirstChild("goodKarma") and player.goodKarma.Value or 0
+
+				-- Bring if they are more evil (so you get good karma)
+				if evil > good then
+					toggles.autoPunch = true
+					EnableHighlight()
+					BringPlayer(player)
+				end
+			end
+		end
+		task.wait(0)
+	end
+
+	-- On toggle off, reset players
+	ResetBroughtPlayers()
+	DisableHighlight()
+	toggles.autoPunch = false
+end
+
+function AutoKill()
+	while _G.AutoKill do
+		for _, player in ipairs(Players:GetPlayers()) do
+			if player ~= LocalPlayer and not isWhitelisted(player.Name) then
+				local char = player.Character
+				local hrp = char and char:FindFirstChild("HumanoidRootPart")
+				local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+				if hrp and myHRP then
+					toggles.autoPunch = true
+					EnableHighlight()
+					-- Teleport target slightly *away* (like 6 studs) so it doesn't overlap and kill you
+					hrp.CFrame = myHRP.CFrame * CFrame.new(0, 0, -6)
+					hrp.Velocity = Vector3.new(0, 0, 0)
+				end
+			end
+		end
+		task.wait(0)
+	end
+	ResetBroughtPlayers()
+	DisableHighlight()
+	toggles.autoPunch = false
+end
+
+function AutoKillTarget()
+	while _G.AutoKillTarget do
+		for _, player in ipairs(Players:GetPlayers()) do
+			if player ~= LocalPlayer and player.Name == targetPlayerName then
+				local char = player.Character
+				local hrp = char and char:FindFirstChild("HumanoidRootPart")
+				local myHRP = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+				if hrp and myHRP then
+					toggles.autoPunch = true
+					EnableHighlight()
+					-- Teleport target slightly *away* (like 6 studs) so it doesn't overlap and kill you
+					hrp.CFrame = myHRP.CFrame * CFrame.new(0, 0, -6)
+					hrp.Velocity = Vector3.new(0, 0, 0)
+				end
+			end
+		end
+		task.wait(0)
+	end
+	ResetBroughtPlayers()
+	DisableHighlight()
+	toggles.autoPunch = false
+end
+
+kill.newToggle("Bring All", "Bring You Every Player", false, function(plr)
+	_G.AutoKill = plr
+	if plr then
+		AutoKill()
+	else
+		ResetBroughtPlayers()
+	end
+end)
+
+
+kill.newToggle("Bring Good Karma", "Bring You a Bad Player", false, function(good)
+	_G.AutoGood = good
+	if good then
+		AutoGoodKarma()
+	else
+		ResetBroughtPlayers()
+	end
+end)
+
+kill.newToggle("Bring Evil Karma", "Bring You a Good Player", false, function(evil)
+	_G.AutoEvil = evil
+	if evil then
+		AutoEvilKarma()
+	else
+		ResetBroughtPlayers()
+	end
+end)
+
+LocalPlayer.CharacterAdded:Connect(function(character)
+	if _G.AutoEvil then
+		AutoEvilKarma()
+	end
+	if _G.AutoGood then
+		AutoGoodKarma()
+	end
+	if _G.AutoKill then
+		AutoKill()
+	end
+	if _G.AutoKillTarget then
+		AutoKillTarget()
+	end
+end)
+
+local function getPlayerList()
+	local playerList = {}
+	for _, player in pairs(Players:GetPlayers()) do
+		if player ~= LocalPlayer then
+			table.insert(playerList, player.Name)
+		end
+	end
+	return playerList
+end
+
+kill.newInput("Whitelist Player!", "Type exact username or displayname", function(targetInput)
+	local player = findPlayerByName(targetInput)
+	if player then
+		if not isWhitelisted(player.Name) then
+			table.insert(whitelist, player.Name)
+		else
+			game.StarterGui:SetCore("SendNotification", {
+				Title = "[Disguise!]";
+				Text = "Player Already Whitelisted";
+				Duration = 5;
+			})
+		end
+	else
+		game.StarterGui:SetCore("SendNotification", {
+			Title = "[Disguise!]";
+			Text = "Player Not Found";
+			Duration = 5;
+		})
+	end
+end)
+
+kill.newButton("Remove Whitelist", "Remove Whitelisted Player", function()
+	whitelist = {}
+	game.StarterGui:SetCore("SendNotification", {
+		Title = "[Disguise!]";
+		Text = "Player Remove To Whitelist";
+		Duration = 5;
+	})
+end)
+
+kill.newInput("Target Player!", "Type exact username or displayname", function(targetInput)
+	-- Find matching player
+	local playerFound = nil
+	local input = targetInput:lower()
+	for _, player in pairs(Players:GetPlayers()) do
+		if player.Name:lower() == input or player.DisplayName:lower() == input then
+			playerFound = player
+			break
+		end
+	end
+
+	if playerFound then
+		targetPlayerName = playerFound.Name
+	else
+		
+	end
+end)
+
+kill.newToggle("Bring Target", "Bring You a Target Player", false, function(target)
+	_G.AutoKillTarget = target
+	if target then
+		AutoKillTarget() -- start the loop when toggle is ON
+	else
+		ResetBroughtPlayers() -- reset when toggle is OFF
+	end
+end)
