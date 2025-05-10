@@ -23,11 +23,11 @@ local rockNames = {"None", "Jungle Rock", "King Rock", "Legends Rock", "Inferno 
 local safezone = CFrame.new(-40.3073616, 57.2281189, 1994.49194, 0.999990523, 7.06776415e-09, -0.00435601966, -7.17407111e-09, 1, -2.43889637e-08, 0.00435601966, 2.44199825e-08, 0.999990523)
 
 
-local main = DrRayLibrary.newTab("Main", "ImageIdHere")
-local glitch = DrRayLibrary.newTab("Rocks", "ImageIdHere")
-local farm = DrRayLibrary.newTab("Reb", "ImageIdHere")
-local player = DrRayLibrary.newTab("Player", "ImageIdHere")
-local kill = DrRayLibrary.newTab("Kill", "ImageHere")
+local main = DrRayLibrary.newTab("🛠Main⛓", "ImageIdHere")
+local glitch = DrRayLibrary.newTab("💪Rocks🦾", "ImageIdHere")
+local farm = DrRayLibrary.newTab("🔁Reb🔁", "ImageIdHere")
+local player = DrRayLibrary.newTab("🕵️‍♀️Player🎭", "ImageIdHere")
+local kill = DrRayLibrary.newTab("💀Kill💀", "ImageHere")
 
 local function getTool(toolName)
 	local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
