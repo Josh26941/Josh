@@ -184,9 +184,17 @@ main.newToggle("Auto Eat Egg", "Eat Egg Every 30 mins", false, function(autoegg)
 						egg.Parent = player.Character
 						task.wait()
 						egg:Activate()
+						
+						-- Wait 30 minutes after eating an egg
+						task.wait(1800)
+					else
+						-- If no egg found, check again after short delay
+						task.wait(5)
 					end
+				else
+					-- If boost active, check again after short delay
+					task.wait(5)
 				end
-				task.wait()
 			end
 		end)
 	end
